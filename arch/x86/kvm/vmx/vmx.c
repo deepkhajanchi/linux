@@ -66,7 +66,8 @@ MODULE_LICENSE("GPL");
 
 //changes for assignment 2 and 3
 //int exit_counter=0;
-atomic_t exit_counter = ATOMIC_INIT(0);
+//atomic_t exit_counter = ATOMIC_INIT(0);
+extern atomic_t exit_counter;
 EXPORT_SYMBOL(exit_counter);
 //done
 
