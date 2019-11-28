@@ -25,10 +25,13 @@
 #include "pmu.h"
 
 //changes for assignment 2 and 3
+
 #include "vmx/xmx.h"
 
-extern atomic_t exit_counter;
-//extern int exit_counter;
+//extern atomic_t exit_counter;
+atomic_t exit_counter;
+EXPORT_SYMBOL(exit_counter);
+
 //done
 
 static u32 xstate_required_size(u64 xstate_bv, bool compacted)
