@@ -25,9 +25,10 @@
 #include "pmu.h"
 
 //changes for assignment 2 and 3
-#include "vmx/xmx.c"
+#include "vmx/xmx.h"
 
-extern int exit_counter;
+extern atomic_t exit_counter;
+//extern int exit_counter;
 //done
 
 static u32 xstate_required_size(u64 xstate_bv, bool compacted)
@@ -1055,11 +1056,12 @@ int kvm_emulate_cpuid(struct kvm_vcpu *vcpu)
 	
 	//changes in assingment 2 and 3
 	if(eax == 0x4FFFFFFF){
-		eax=exit_counter;
+		eax=atomic_read(&exit_counter);
+	}else{
+		kvm_cpuid(vcpu, &eax, &ebx, &ecx, &edx, true);
 	}
 	//done
 	
-	kvm_cpuid(vcpu, &eax, &ebx, &ecx, &edx, true);
 	kvm_rax_write(vcpu, eax);
 	kvm_rbx_write(vcpu, ebx);
 	kvm_rcx_write(vcpu, ecx);
