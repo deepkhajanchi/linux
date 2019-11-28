@@ -65,7 +65,8 @@ MODULE_AUTHOR("Qumranet");
 MODULE_LICENSE("GPL");
 
 //changes for assignment 2 and 3
-int exit_counter=0;
+//int exit_counter=0;
+atomic_t exit_counter = ATOMIC_INIT(0);
 EXPORT_SYMBOL(exit_counter);
 //done
 
@@ -5866,7 +5867,9 @@ static int vmx_handle_exit(struct kvm_vcpu *vcpu)
 {	
 	
 	//changes in assignment 2 and 3
-	exit_counter = exit_counter+1;
+	//exit_counter = exit_counter+1;
+	atomic_inc(exit_counter);
+	
 	//done
 	
 	struct vcpu_vmx *vmx = to_vmx(vcpu);
