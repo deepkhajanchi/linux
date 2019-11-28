@@ -24,6 +24,11 @@
 #include "trace.h"
 #include "pmu.h"
 
+//changes for assignment 2 and 3
+#include "vmx/xmx.c"
+
+extern int exit_counter;
+//done
 
 static u32 xstate_required_size(u64 xstate_bv, bool compacted)
 {
