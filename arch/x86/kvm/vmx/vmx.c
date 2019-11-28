@@ -5859,26 +5859,20 @@ void dump_vmcs(void)
 		       vmcs_read16(VIRTUAL_PROCESSOR_ID));
 }
 
-//changes for assignment 2.
-extern int interruptCounterCpuid;
-extern int counterIpt[2][69];
-
 /*
  * The guest has exits.
  */
 static int vmx_handle_exit(struct kvm_vcpu *vcpu)
-{
-	//atomic_inc(&interruptCounterCpuid);
-	interruptCounterCpuid = interruptCounterCpuid+1;
+{	
+	
+	//changes in assignment 2 and 3
+	exit_counter = exit_counter+1;
+	//done
+	
 	struct vcpu_vmx *vmx = to_vmx(vcpu);
 	u32 exit_reason = vmx->exit_reason;
 	u32 vectoring_info = vmx->idt_vectoring_info;
 
-	if(exit_reason < 69){
-        counterIpt[1][exit_reason] = counterIpt[1][exit_reason] + 1;
-	}
-
-//till here
 	trace_kvm_exit(exit_reason, vcpu, KVM_ISA_VMX);
 
 	/*
