@@ -25,12 +25,15 @@
 #include "pmu.h"
 
 //changes for assignment 2 and 3
-
+#include <math.h>
 #include "vmx/xmx.h"
 
 //extern atomic_t exit_counter;
 atomic_t exit_counter;
+atomic64_t cycle_counter;
+
 EXPORT_SYMBOL(exit_counter);
+EXPORT_SYMBOL(cycle_counter);
 
 //done
 
@@ -1058,10 +1061,22 @@ int kvm_emulate_cpuid(struct kvm_vcpu *vcpu)
 	ecx = kvm_rcx_read(vcpu);
 	
 	//changes in assingment 2 and 3
-	if(eax == 0x4FFFFFFF){
-		eax=atomic_read(&exit_counter);
-	}else{
-		kvm_cpuid(vcpu, &eax, &ebx, &ecx, &edx, true);
+	
+	uint64_t low;
+	uint64_t high;
+	switch(eax){
+		case 0x4FFFFFFF:
+			eax=atomic_read(&exit_counter);
+			break;
+		case 0x4FFFFFFE:
+			low=atomic64_read(&cycle_counter);
+			high=stomic64_read(&cycle_counter);
+			
+			ebx=high;
+			ecx=low;
+			break;
+		default:
+			kvm_cpuid(vcpu, &eax, &ebx, &ecx, &edx, true);
 	}
 	//done
 	
