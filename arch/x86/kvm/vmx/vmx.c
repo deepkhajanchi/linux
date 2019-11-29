@@ -68,6 +68,8 @@ MODULE_LICENSE("GPL");
 //int exit_counter=0;
 //atomic_t exit_counter = ATOMIC_INIT(0);
 extern atomic_t exit_counter;
+extern atomic64_t cycle_counter;
+
 EXPORT_SYMBOL(exit_counter);
 //done
 
@@ -5869,6 +5871,7 @@ static int vmx_handle_exit(struct kvm_vcpu *vcpu)
 	
 	//changes in assignment 2 and 3
 	//exit_counter = exit_counter+1;
+	uint64_t start_cycle=rdtsc();
 	atomic_inc(exit_counter);
 	
 	//done
@@ -5959,7 +5962,14 @@ static int vmx_handle_exit(struct kvm_vcpu *vcpu)
 
 	if (exit_reason < kvm_vmx_max_exit_handlers
 	    && kvm_vmx_exit_handlers[exit_reason])
-		return kvm_vmx_exit_handlers[exit_reason](vcpu);
+	//return kvm_vmx_exit_handlers[exit_reason](vcpu);
+	{
+		int exitreason=kvm_vmx_exit_handlers[exit_reason](vcpu);
+		uint64_t end_cycle=rdtsc();
+		uint64_t diff=end_cycle-start_cycle;
+		
+	}
+	
 	else {
 		vcpu_unimpl(vcpu, "vmx: unexpected exit reason 0x%x\n",
 				exit_reason);
