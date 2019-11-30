@@ -5959,7 +5959,8 @@ static int vmx_handle_exit(struct kvm_vcpu *vcpu)
 			vmx->loaded_vmcs->soft_vnmi_blocked = 0;
 		}
 	}
-
+	
+//chnages for assignment 2 and 3
 	if (exit_reason < kvm_vmx_max_exit_handlers
 	    && kvm_vmx_exit_handlers[exit_reason])
 	//return kvm_vmx_exit_handlers[exit_reason](vcpu);
@@ -5967,8 +5968,10 @@ static int vmx_handle_exit(struct kvm_vcpu *vcpu)
 		int exitreason=kvm_vmx_exit_handlers[exit_reason](vcpu);
 		uint64_t end_cycle=rdtsc();
 		uint64_t diff=end_cycle-start_cycle;
-		
+		atomic64_add_return(diff,&cycle_counter);
+		return exitreason;	
 	}
+	//done
 	
 	else {
 		vcpu_unimpl(vcpu, "vmx: unexpected exit reason 0x%x\n",
