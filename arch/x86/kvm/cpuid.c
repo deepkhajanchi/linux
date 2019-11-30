@@ -31,10 +31,17 @@
 //extern atomic_t exit_counter;
 atomic_t exit_counter;
 atomic64_t cycle_counter;
+atomic64_t cpuidR;
+atomic_t single_exit;
+int reasonList[68];
+uint64_t cycleList[68];
 
 EXPORT_SYMBOL(exit_counter);
 EXPORT_SYMBOL(cycle_counter);
-
+EXPORT_SYMBOL(cpuid_R);
+EXPORT_SYMBOL(single_exit);
+EXPORT_SYMBOL(reasonList);
+EXPORT_SYMBOL(cycleList);
 //done
 
 static u32 xstate_required_size(u64 xstate_bv, bool compacted)
@@ -1064,10 +1071,17 @@ int kvm_emulate_cpuid(struct kvm_vcpu *vcpu)
 	
 	uint64_t low;
 	uint64_t high;
+	
+	uint64_t lowbit
+	uint64_t highbit;
+	
 	switch(eax){
+			//number of exits
 		case 0x4FFFFFFF:
 			eax=atomic_read(&exit_counter);
 			break;
+			
+			//cycles
 		case 0x4FFFFFFE:
 			//low=atomic64_read(&cycle_counter);
 			//high=stomic64_read(&cycle_counter);
@@ -1077,6 +1091,60 @@ int kvm_emulate_cpuid(struct kvm_vcpu *vcpu)
 			ebx=high;
 			ecx=low;
 			break;
+			
+		case 0x4FFFFFFD:
+			/*
+			eax=reasonList[ecx];
+			break;
+			*/
+			//For all the exit reasons not in intel SDM, return 0.
+			if(ecx == 35 || ecx ==38 || ecx ==42 || ecx> 68 || ecx< 0){
+				eax= 0;
+				ebx= 0;
+				ecx= 0;
+				edx= 0xFFFFFFFF;
+			}
+			
+			/*handling the exit reasons not in KVM
+			  and returns 0 in all the registers*/
+			else if(cycleList[eax]>0){
+				eax= reasonList[ecx];
+			}else{
+				eax=0;
+				ebx=0;
+				ecx=0;
+				edx=0;
+			}
+			
+		case 0x4FFFFFFC:
+			/*
+			lowbit= cycleList[ecx] & 0xffffffff;
+			highbit= cycleList[ecx] >> 32;
+			*/
+			
+			if(ecx ==35 || ecx == 38 || ecx == 42 || ecx>68 || ecx<0){
+				eax=0;
+				ebx=0;
+				ecx=0;
+				edx=0xFFFFFFFF;
+			}
+			
+			//handles the exit reason not in KVM and returns 0 in all registers
+			else if(cycleList[ecx]>0){
+				uint64_t cycle_time= cycleList[ecx];
+				
+				lowbit= cycleList[ecx] & 0xffffffff;
+				highbit= cycleList[ecx] >> 32;
+				
+				ebx=highbit;
+				ecx=lowbit;
+			}else{
+				eax= 0;
+				ebx= 0;
+				ecx= 0;
+				edx= 0;
+			}
+				break;
 		default:
 			kvm_cpuid(vcpu, &eax, &ebx, &ecx, &edx, true);
 	}
