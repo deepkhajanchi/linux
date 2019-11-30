@@ -65,6 +65,7 @@ MODULE_AUTHOR("Qumranet");
 MODULE_LICENSE("GPL");
 
 //changes for assignment 2 and 3
+
 //int exit_counter=0;
 //atomic_t exit_counter = ATOMIC_INIT(0);
 extern atomic_t exit_counter;
@@ -72,7 +73,7 @@ extern atomic64_t cycle_counter;
 extern atomic64_t cpuidR;
 extern atomic_t single_exit;
 extern int reasonList[68];
-extern int cycleList[68];
+extern uint64_t cycleList[68];
 
 EXPORT_SYMBOL(exit_counter);
 //done
@@ -5888,7 +5889,7 @@ static int vmx_handle_exit(struct kvm_vcpu *vcpu)
 	u32 ecx;
 	ecx=kvm_rbx_read(vcpu);
 	
-	printk(KERN_EMERG "cx_cmpe283: %d", ecx);
+	//printk(KERN_EMERG "cx_cmpe283: %d", ecx);
 	if(exit_reason == ecx){
 		printk(KERN_EMERG "cmpe283_ecx: %d", ecx);
 		atomic_inc(&single_exit);
@@ -5986,6 +5987,7 @@ static int vmx_handle_exit(struct kvm_vcpu *vcpu)
 		uint64_t diff=end_cycle-start_cycle;
 		atomic64_add_return(diff,&cycle_counter);
 		
+		uint64_t cycle = cycleList[exit_reason];
 		cycleList[exit_reason] = cycleList[exit_reason]+diff;
 		//int reasonList[kvm_vmx_exit_handlers];
 		reasonList[exit_reason]++;
@@ -5997,6 +5999,7 @@ static int vmx_handle_exit(struct kvm_vcpu *vcpu)
 		for(i=0; i<kvm_vmx_max_exit_handlers;i++){
 			if(reasonList[i]>0){
 				printk(KERN_EMRG "count of %d exit :%d",i,reasonList[i]);
+				printk(KERN_EMRG "count of %d exit :%d",i,cycleList[i]);
 			}
 		}
 		return exitreason;	
