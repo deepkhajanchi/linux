@@ -25,8 +25,8 @@
 #include "pmu.h"
 
 //changes for assignment 2 and 3
-#include <math.h>
-#include "vmx/xmx.h"
+//#include <math.h>
+//#include "vmx/xmx.h"
 
 //extern atomic_t exit_counter;
 atomic_t exit_counter;
@@ -1072,7 +1072,7 @@ int kvm_emulate_cpuid(struct kvm_vcpu *vcpu)
 	uint64_t low;
 	uint64_t high;
 	
-	uint64_t lowbit
+	uint64_t lowbit;
 	uint64_t highbit;
 	
 	switch(eax){
