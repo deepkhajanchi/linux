@@ -69,6 +69,7 @@ MODULE_LICENSE("GPL");
 //atomic_t exit_counter = ATOMIC_INIT(0);
 extern atomic_t exit_counter;
 extern atomic64_t cycle_counter;
+extern atomic64_t cpuidR;
 
 EXPORT_SYMBOL(exit_counter);
 //done
@@ -5969,6 +5970,17 @@ static int vmx_handle_exit(struct kvm_vcpu *vcpu)
 		uint64_t end_cycle=rdtsc();
 		uint64_t diff=end_cycle-start_cycle;
 		atomic64_add_return(diff,&cycle_counter);
+		
+		int reasonList[kvm_vmx_exit_handlers];
+		reasonList[exit_reason]++;
+		
+		if(10==exit_reason){
+			atomic64_inc(&cpuidR);
+		}
+		int i;
+		for(i=0; i<kvm_vmx_max_exit_handlers;i++){
+			printk(KERN_EMRG "count of %d exit :%d",i,reasonList[i]);
+		}
 		return exitreason;	
 	}
 	//done
