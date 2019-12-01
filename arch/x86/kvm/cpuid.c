@@ -25,23 +25,15 @@
 #include "pmu.h"
 
 //changes for assignment 2 and 3
-//#include <math.h>
-//#include "vmx/xmx.h"
+atomic_t exit_count;
+atomic_t vm_exits[67];
+atomic64_t exit_time;
+atomic64_t vm_exit_time[67];
 
-//extern atomic_t exit_counter;
-atomic_t exit_counter;
-atomic64_t cycle_counter;
-atomic64_t cpuidR;
-atomic_t single_exit;
-int reasonList[68];
-uint64_t cycleList[68];
-
-EXPORT_SYMBOL(exit_counter);
-EXPORT_SYMBOL(cycle_counter);
-EXPORT_SYMBOL(cpuid_R);
-EXPORT_SYMBOL(single_exit);
-EXPORT_SYMBOL(reasonList);
-EXPORT_SYMBOL(cycleList);
+EXPORT_SYMBOL(exit_count);
+EXPORT_SYMBOL(vm_exits);
+EXPORT_SYMBOL(exit_time);
+EXPORT_SYMBOL(vm_exit_time);
 //done
 
 static u32 xstate_required_size(u64 xstate_bv, bool compacted)
@@ -1068,87 +1060,63 @@ int kvm_emulate_cpuid(struct kvm_vcpu *vcpu)
 	ecx = kvm_rcx_read(vcpu);
 	
 	//changes in assingment 2 and 3
-	
-	uint64_t low;
-	uint64_t high;
-	
-	uint64_t lowbit;
-	uint64_t highbit;
-	
-	switch(eax){
-			//number of exits
-		case 0x4FFFFFFF:
-			eax=atomic_read(&exit_counter);
-			break;
-			
-			//cycles
-		case 0x4FFFFFFE:
-			//low=atomic64_read(&cycle_counter);
-			//high=stomic64_read(&cycle_counter);
-			low=atomic64_read(&cycle_counter)  & 0xffffffff;
-			high=atomic64_read(&cycle_counter)  >> 32;
-			
-			ebx=high;
-			ecx=low;
-			break;
-			
-		case 0x4FFFFFFD:
-			/*
-			eax=reasonList[ecx];
-			break;
-			*/
-			//For all the exit reasons not in intel SDM, return 0.
-			if(ecx == 35 || ecx ==38 || ecx ==42 || ecx> 68 || ecx< 0){
-				eax= 0;
-				ebx= 0;
-				ecx= 0;
-				edx= 0xFFFFFFFF;
-			}
-			
-			/*handling the exit reasons not in KVM
-			  and returns 0 in all the registers*/
-			else if(cycleList[eax]>0){
-				eax= reasonList[ecx];
-			}else{
-				eax=0;
-				ebx=0;
-				ecx=0;
-				edx=0;
-			}
-			
-		case 0x4FFFFFFC:
-			/*
-			lowbit= cycleList[ecx] & 0xffffffff;
-			highbit= cycleList[ecx] >> 32;
-			*/
-			
-			if(ecx ==35 || ecx == 38 || ecx == 42 || ecx>68 || ecx<0){
-				eax=0;
-				ebx=0;
-				ecx=0;
-				edx=0xFFFFFFFF;
-			}
-			
-			//handles the exit reason not in KVM and returns 0 in all registers
-			else if(cycleList[ecx]>0){
-				uint64_t cycle_time= cycleList[ecx];
-				
-				lowbit= cycleList[ecx] & 0xffffffff;
-				highbit= cycleList[ecx] >> 32;
-				
-				ebx=highbit;
-				ecx=lowbit;
-			}else{
-				eax= 0;
-				ebx= 0;
-				ecx= 0;
-				edx= 0;
-			}
-				break;
-		default:
-			kvm_cpuid(vcpu, &eax, &ebx, &ecx, &edx, true);
+	if(eax == 0xFFFFFFFF){
+		eax= atomic_read(&exit_count);	
+		ebx= 0;
+		ecx= 0;
+		edx= 0;
+	}else if(eax== 0x4FFFFFFE){
+		eax=0x00;
+		u64 val= atomic64_read(&exit_time) >>32;
+		ebx= val & 0xffffffff;
+		ecx= atomic64_read(&exit_time) & 0xffffffff;
+		edx=0x00;
+	}else if(eax== 0x4FFFFFFD){
+		// not in SDM and handling KVM
+		if(ecx== 42|| ecx== 35|| ecx== 38 ||ecx>=65){
+			eax= 0x0;
+			ebx= 0x0;
+			eax= 0x0;
+			ebx= 0xFFFFFFFF;
+		}else{
+			int t=atomic_read(&vm_exits[ecx]);
+			if(t==-5){
+			eax=0;
+			ebx=0;
+			ecx=0;
+			edx=0;
+	}else{
+			eax= t; //t has taken as temporary value
+			ebx= 0;
+			ecx= 0; 			    
+			edx= 0;	
 	}
-	//done
+}
+}else if(eax == 0x4FFFFFFC){
+	if(ecx== 42|| ecx== 35|| ecx== 38|| ecx>= 65){//not in SDM
+	eax = 0x0;
+	ebx = 0x0;
+	ebx = 0x0;
+	ebx = 0xFFFFFFFF;
+}else{
+	u64 t= atomic64_read(&vm_exit_time[ecx]);
+	if(t == -5){//kvm handling if and else
+		eax=0;
+		ebx=0;
+		ecx=0;
+		edx=0;		
+	}else{
+		eax=0;
+		u64 val=t>>32;
+		ebx=val & 0xffffffff;
+		ecx=t & 0xffffffff;
+		edx=0;
+}
+}
+}else{
+	kvm_cpuid(vcpu, &eax, &ebx, &ecx, &edx, true);	
+}
+		//done
 	
 	kvm_rax_write(vcpu, eax);
 	kvm_rbx_write(vcpu, ebx);
