@@ -66,16 +66,11 @@ MODULE_LICENSE("GPL");
 
 //changes for assignment 2 and 3
 
-//int exit_counter=0;
-//atomic_t exit_counter = ATOMIC_INIT(0);
-extern atomic_t exit_counter;
-extern atomic64_t cycle_counter;
-extern atomic64_t cpuidR;
-extern atomic_t single_exit;
-extern int reasonList[68];
-extern uint64_t cycleList[68];
+extern atomic_t exit_count;
+extern atomic_t vm_exits[67];
+extern atomic64_t exit_time;
+extern atomic64_t vm_exit_time[67];
 
-EXPORT_SYMBOL(exit_counter);
 //done
 
 static const struct x86_cpu_id vmx_cpu_id[] = {
@@ -5875,29 +5870,19 @@ static int vmx_handle_exit(struct kvm_vcpu *vcpu)
 {	
 	
 	//changes in assignment 2 and 3
-	//exit_counter = exit_counter+1;
-	uint64_t start_cycle=rdtsc();
-	atomic_inc(exit_counter);
-	
+	u64 start_cycle=rdtsc();
 	//done
 	
 	struct vcpu_vmx *vmx = to_vmx(vcpu);
 	u32 exit_reason = vmx->exit_reason;
 	u32 vectoring_info = vmx->idt_vectoring_info;
-
-	//changes in assignment 2 and 3
-	u32 ecx;
-	ecx=kvm_rbx_read(vcpu);
-	
-	//printk(KERN_EMERG "cx_cmpe283: %d", ecx);
-	if(exit_reason == ecx){
-		printk(KERN_EMERG "cmpe283_ecx: %d", ecx);
-		atomic_inc(&single_exit);
-		printk(KERN_EMERG "ecx: %d exit reason :%d", ecx, single_exit);
-	}
-	//done
 	
 	trace_kvm_exit(exit_reason, vcpu, KVM_ISA_VMX);
+
+	//changes in assignment 2 and 3
+		atomic_inc(&exit_count);
+		u32 i;	
+	//done
 
 	/*
 	 * Flush logged GPAs PML buffer, this will make dirty_bitmap more
@@ -5979,34 +5964,26 @@ static int vmx_handle_exit(struct kvm_vcpu *vcpu)
 	
 //chnages for assignment 2 and 3
 	if (exit_reason < kvm_vmx_max_exit_handlers
-	    && kvm_vmx_exit_handlers[exit_reason])
-	//return kvm_vmx_exit_handlers[exit_reason](vcpu);
-	{
-		int exitreason=kvm_vmx_exit_handlers[exit_reason](vcpu);
-		uint64_t end_cycle=rdtsc();
-		uint64_t diff=end_cycle-start_cycle;
-		atomic64_add_return(diff,&cycle_counter);
-		
-		uint64_t cycle = cycleList[exit_reason];
-		cycleList[exit_reason] = cycleList[exit_reason]+diff;
-		//int reasonList[kvm_vmx_exit_handlers];
-		reasonList[exit_reason]++;
-		
-		if(10==exit_reason){
-			atomic64_inc(&cpuidR);
-		}
-		int i;
-		for(i=0; i<kvm_vmx_max_exit_handlers;i++){
-			if(reasonList[i]>0){
-				printk(KERN_EMRG "count of %d exit :%d",i,reasonList[i]);
-				printk(KERN_EMRG "count of %d exit :%d",i,cycleList[i]);
-			}
-		}
-		return exitreason;	
+	    && kvm_vmx_exit_handlers[exit_reason]){
+		int t= kvm_vmx_exit_handlers[exit_reason](vcpu);
+	u64 end_cycle= rdtsc();
+	u64 diff=end_cycle-start_cycle;
+	atomic64_add(diff,&exit_time);
+	if(exit_reason==EXIT_REASON_RDRAND || exit_reason == EXIT_REASON_RDSEED || exit_reason== EXIT_REASON_XSAVES || exit_reason== EXIT_REASON_XRSTORS || exit_reason== EXIT_REASON_UMWAIT || exit_reason == handle_unexpected_vmexit){
+		atomic64_set(&vm_exit_time[exit_reason], -5);
+		atomic_set(&vm_exits[exit_reason], -5);
+}else{
+		atomic64_add(diff,&vm_exit_time[exit_reason]);
+atomic_inc(&vm_exits[exit_reason]);
+}		
+	return t;
 	}
-	//done
+	
 	
 	else {
+		atomic_set(&vm_exits[exit_reason],-5);
+		atomic64_set(&vm_exit_time[exit_reason],-5);
+//done
 		vcpu_unimpl(vcpu, "vmx: unexpected exit reason 0x%x\n",
 				exit_reason);
 		dump_vmcs();
