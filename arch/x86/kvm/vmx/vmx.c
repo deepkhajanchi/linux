@@ -5978,12 +5978,12 @@ atomic_inc(&vm_exits[exit_reason]);
 }		
 	return t;
 	}
-	
+	//done
 	
 	else {
 		atomic_set(&vm_exits[exit_reason],-5);
 		atomic64_set(&vm_exit_time[exit_reason],-5);
-//done
+
 		vcpu_unimpl(vcpu, "vmx: unexpected exit reason 0x%x\n",
 				exit_reason);
 		dump_vmcs();
