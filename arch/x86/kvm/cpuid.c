@@ -1085,12 +1085,12 @@ int kvm_emulate_cpuid(struct kvm_vcpu *vcpu)
 			ebx=0;
 			ecx=0;
 			edx=0;
-	}else{
+}else{
 			eax= t; //t has taken as temporary value
 			ebx= 0;
 			ecx= 0; 			    
 			edx= 0;	
-	}
+		}
 }
 }else if(eax == 0x4FFFFFFC){
 	if(ecx== 42|| ecx== 35|| ecx== 38|| ecx>= 65){//not in SDM
@@ -1105,7 +1105,7 @@ int kvm_emulate_cpuid(struct kvm_vcpu *vcpu)
 		ebx=0;
 		ecx=0;
 		edx=0;		
-	}else{
+}else{
 		eax=0;
 		u64 val=t>>32;
 		ebx=val & 0xffffffff;
